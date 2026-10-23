@@ -8,6 +8,8 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image
 
@@ -19,19 +21,23 @@ class ZedViewer(Node):
     def __init__(self):
         super().__init__("zed_live_view")
         self.last_frame = 0.0
+        self.rgb_group = MutuallyExclusiveCallbackGroup()
+        self.depth_group = MutuallyExclusiveCallbackGroup()
 
         self.create_subscription(
             Image,
             "/zed/zed_node/rgb/image_rect_color",
             self.rgb_callback,
-            qos_profile_sensor_data
+            qos_profile_sensor_data,
+            callback_group=self.rgb_group
         )
 
         self.create_subscription(
             Image,
             "/zed/zed_node/depth/depth_registered",
             self.depth_callback,
-            qos_profile_sensor_data
+            qos_profile_sensor_data,
+            callback_group=self.depth_group
         )
 
         self.get_logger().info("Waiting for RGB and depth images...")
@@ -110,7 +116,7 @@ class ZedViewer(Node):
         )
 
         success, encoded = cv2.imencode(
-            ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 75]
+            ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 50]
         )
 
         if success:
@@ -162,7 +168,7 @@ class ViewerHandler(BaseHTTPRequestHandler):
                         + frame + b"\r\n"
                     )
 
-                time.sleep(0.15)
+                time.sleep(0.05)
         except (BrokenPipeError, ConnectionError, OSError):
             pass
 
@@ -185,11 +191,13 @@ def main():
 
     print("SCOUT2 vision viewer running on localhost:8081")
 
+    executor = MultiThreadedExecutor(num_threads=2)
     try:
-        rclpy.spin(node)
+        rclpy.spin(node, executor=executor)
     except KeyboardInterrupt:
         pass
     finally:
+        executor.shutdown()
         server.shutdown()
         server.server_close()
         node.destroy_node()
