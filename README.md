@@ -21,6 +21,11 @@ This repository contains development and documentation for:
 - Stereolabs ZED X
 - RoboSense LiDAR
 
+## Documentation
+
+- [Start-up and operation guide](docs/startup_guide.md): power-on, connecting, driving, recording data, and shutdown. Section 0 is the quick start.
+- [Rosbags](docs/rosbags.md): recorded datasets and how to record new ones.
+
 ## Status
 
 Development in progress.
