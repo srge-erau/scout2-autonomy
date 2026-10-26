@@ -62,6 +62,7 @@ Pick one. Details are in Sections 5 and 6.
 | Method | Robot address | When to use it |
 | :---- | :---- | :---- |
 | Ethernet, into the back-panel port | `192.168.42.42` | In the lab. Most reliable, and fastest for copying bags. |
+| Lab Wi-Fi (SRGE_Local) | `192.168.10.115` | In the lab, without ZeroTier. See 5.6. |
 | The robot's Wi-Fi, `InDro Robotics_ERAU` | `192.168.42.42` | Walking with the robot. Your laptop has no internet while joined. |
 | ZeroTier | `10.13.46.42` | Working remotely, or using RViz. Needs the robot on lab Wi-Fi. |
 
@@ -471,6 +472,22 @@ The router broadcasts its own network, `InDro Robotics_ERAU` (password in the in
 7. After the run, reconnect the router to SRGE_Local, so ZeroTier and the clock work again.
 
 The AgileX remote does not use Wi-Fi at all. Carry it on every run outside the lab.
+
+### 5.6 Connecting over the lab Wi-Fi
+
+Reported by Sean Pearson, October 2026: with a laptop on the lab Wi-Fi (SRGE_Local), SCOUT2 was reachable at `192.168.10.115` without ZeroTier. This is the address the robot holds on the lab network, which is separate from its own `192.168.42.x` subnet.
+
+`[VERIFY]` Which services answer on this address (SSH, the dashboard on port 80, RViz) has not been documented, and the address may change if the lab router assigns it by DHCP. Before relying on it:
+
+```
+ping 192.168.10.115
+```
+
+```
+ssh indro@192.168.10.115
+```
+
+Record which of these work, and whether the address is reserved on the lab router.
 
 ---
 
@@ -996,7 +1013,7 @@ ros2 bag info NAME
 
 **A valid bag has:** every requested topic listed; the ZED's image, camera_info, and odom topics with equal counts; the LiDAR near 10 Hz; the IMU near 200 Hz; and at least one `/tf_static` message. Divide each count by the duration to get the rate.
 
-The repository's `scripts/record_bag.sh` does the same and refuses to start if the clock is not synced or the ZED is not running. It had not been tested on the robot as of 10/23.
+The repository's `scripts/record_bag.sh` does the same and refuses to start if the clock is not synchronised or the ZED is not running. It has not yet been verified on the robot (Known Issue 21); until it has, use the manual commands above.
 
 **Measured bandwidth:**
 
@@ -1018,14 +1035,7 @@ With depth, a bag grows by roughly 5 GB per minute. Without it, about 1 GB per m
 
 **Naming.** Add `_cmd` to the name of any bag that contains `/mux/cmd_vel`. Never play those on the powered robot (1.4).
 
-**Bags recorded so far:**
-
-| Bag | Date | Length | Size | Contents |
-| :---- | :---- | :---- | :---- | :---- |
-| `test_30s` | 9/22 | 30 s | 1.9 GiB | Stationary validation, all sensors including depth |
-| `hallway_01` | 9/29 | 168 s | 1.4 GiB | Hallway P route. LiDAR, wheel odometry, and transforms only; the ZED was down. |
-| `straight_5m` | early Oct. | | | Tape-measured 5 m straight line |
-| `hallway_02_cmd` | 10/14 | 532 s | 7.8 GiB | Hallway P route with the Xbox controller. LiDAR, both ZED eyes, IMU, ZED and wheel odometry, `/joy`, `/mux/cmd_vel`. No depth. |
+**Bags recorded so far:** see `docs/rosbags.md` in the `scout2-autonomy` repository, which also lists results.
 
 ### 9.11 Copying bags off the robot
 
@@ -1206,6 +1216,8 @@ journalctl -b -1 -e
 
 A log that ends abruptly with no shutdown messages indicates a hard hang or power loss. A kernel panic, an OOM kill, or a thermal event will be named explicitly. Candidate causes are thermal (the bay is enclosed and the Jetson sits under another module), power delivery from the 24 V rail, and storage. Until that log is read, the procedures above address the symptom only.
 
+**Related, 10/23:** a boot failure of the Stereolabs computer with Ethernet connected was also reported (Known Issue 20). Record the Ethernet state at power-on when either problem occurs.
+
 **Update, 10/23.** Crash logs have still not been captured. Two practices are required to diagnose the next occurrence: always shut down with `sudo shutdown now` (9.12), so that a crash is distinguishable in `journalctl --list-boots`; and read `journalctl -b -1 -e` immediately after recovering, before anything else.
 
 ### 11.2 Remaining items
@@ -1231,6 +1243,8 @@ A log that ends abruptly with no shutdown messages indicates a hard hang or powe
 | 17 | `/scout_status` cannot be recorded from the host | Its message type exists only in the `base_platform` container | Known limitation (3.1). Record from inside that container if it is ever needed. |
 | 18 | `indro-controller` restarted on its own | Seen once: up 4 minutes while every other container was up 35 | Open. Watch for repeats. |
 | 19 | Xbox control drops outside the lab | Dashboard control lost once the robot left lab Wi-Fi range | Workaround in 5.5. Cause not confirmed. |
+| 20 | Stereolabs computer would not start with Ethernet connected | Reported by Sean Pearson, 10/23: the Stereolabs compute module did not power on with Ethernet connected; it started after Ethernet was disconnected and the robot restarted | Open. Cause not confirmed. Record whether Ethernet is connected at power-on whenever a boot or hang problem occurs, so this can be compared with 11.1. |
+| 21 | `record_bag.sh` not yet verified on the robot | The script's topic list and checks have not been run against the live system | Open. Verify on the next recording (planned: `hallway_04_cmd`) before treating it as the standard procedure. |
 
 ### 11.3 Minor issues and fixes
 
