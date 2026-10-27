@@ -1013,7 +1013,7 @@ ros2 bag info NAME
 
 **A valid bag has:** every requested topic listed; the ZED's image, camera_info, and odom topics with equal counts; the LiDAR near 10 Hz; the IMU near 200 Hz; and at least one `/tf_static` message. Divide each count by the duration to get the rate.
 
-The repository's `scripts/record_bag.sh` does the same and refuses to start if the clock is not synchronised or the ZED is not running. It has not yet been verified on the robot (Known Issue 21); until it has, use the manual commands above.
+The repository's `scripts/record_bag.sh` does the same and refuses to start if the clock is not synchronised or the ZED is not running. It was verified on the robot on 10/27 (`test_fix` and `hallway_04_cmd`) and is the standard recording procedure. The manual commands above remain valid as a fallback.
 
 **Measured bandwidth:**
 
@@ -1244,7 +1244,7 @@ A log that ends abruptly with no shutdown messages indicates a hard hang or powe
 | 18 | `indro-controller` restarted on its own | Seen once: up 4 minutes while every other container was up 35 | Open. Watch for repeats. |
 | 19 | Xbox control drops outside the lab | Dashboard control lost once the robot left lab Wi-Fi range | Workaround in 5.5. Cause not confirmed. |
 | 20 | Stereolabs computer would not start with Ethernet connected | Reported by Sean Pearson, 10/23: the Stereolabs compute module did not power on with Ethernet connected; it started after Ethernet was disconnected and the robot restarted | Open. Cause not confirmed. Record whether Ethernet is connected at power-on whenever a boot or hang problem occurs, so this can be compared with 11.1. |
-| 21 | `record_bag.sh` not yet verified on the robot | The script's topic list and checks have not been run against the live system | Open. Verify on the next recording (planned: `hallway_04_cmd`) before treating it as the standard procedure. |
+| 21 | `record_bag.sh` failed on first use on the robot | The ZED check reported the camera missing (broken pipe under `pipefail`), and a timed recording froze because `timeout` ran the recorder in the background | Resolved 10/27. The topic list is captured before the check, and `timeout --foreground` is used. Verified with `test_fix` (10 s) and `hallway_04_cmd` (214 s, all 14 topics). |
 
 ### 11.3 Minor issues and fixes
 
