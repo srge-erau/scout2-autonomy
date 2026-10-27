@@ -46,7 +46,10 @@ if ! timedatectl show -p NTPSynchronized --value | grep -q yes; then
 fi
 
 # Without the ZED running, the bag records with no camera or IMU and gives no warning.
-if ! ros2 topic list | grep -q '^/zed/zed_node/imu/data$'; then
+# Capture the list first: piping straight into grep -q makes ros2 fail with a broken
+# pipe, which pipefail then reports as "not found".
+TOPIC_LIST="$(ros2 topic list 2>/dev/null || true)"
+if ! grep -qx '/zed/zed_node/imu/data' <<<"$TOPIC_LIST"; then
   echo "ZED topics not found. Start the camera first: tmux new -s zed, then: front" >&2
   exit 1
 fi
