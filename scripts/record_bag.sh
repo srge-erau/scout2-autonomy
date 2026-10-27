@@ -70,7 +70,7 @@ echo "Recording ${#TOPICS[@]} topics to $BAG_DIR/$NAME"
 echo "Wait for 'All requested topics are subscribed' before moving the robot."
 
 if [[ -n "$DURATION" ]]; then
-  timeout -s INT "$DURATION" ros2 bag record -o "$NAME" "${TOPICS[@]}" || true
+  timeout --foreground -s INT "$DURATION" ros2 bag record -o "$NAME" "${TOPICS[@]}" || true
 else
   ros2 bag record -o "$NAME" "${TOPICS[@]}" || true
 fi
